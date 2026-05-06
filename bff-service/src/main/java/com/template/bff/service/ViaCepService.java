@@ -16,6 +16,8 @@ public class ViaCepService {
 
     @Cacheable(value = "cep-cache", key = "#cep")
     public EnderecoDTO buscarEndereco(String cep) {
+        // Intentionally synchronous: results are cached in Redis, so blocking here is acceptable
+        // and simplifies integration with Spring Cache's synchronous @Cacheable contract.
         return viaCepWebClient.get()
             .uri("/{cep}/json/", cep)
             .retrieve()

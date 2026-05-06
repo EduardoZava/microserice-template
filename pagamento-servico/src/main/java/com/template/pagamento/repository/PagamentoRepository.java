@@ -21,6 +21,6 @@ public interface PagamentoRepository extends JpaRepository<Pagamento, Long> {
         @Param("status") Pagamento.StatusPagamento status
     );
 
-    @Query("SELECT SUM(p.valor) FROM Pagamento p WHERE p.status = 'APROVADO' AND p.ordemServicoId = :ordemId")
+    @Query("SELECT SUM(p.valor) FROM Pagamento p WHERE p.status = com.template.pagamento.entity.Pagamento.StatusPagamento.APROVADO AND p.ordemServicoId = :ordemId")
     java.math.BigDecimal sumValorAprovadoByOrdem(@Param("ordemId") Long ordemId);
 }
