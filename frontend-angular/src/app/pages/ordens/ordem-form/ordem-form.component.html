@@ -1,0 +1,53 @@
+<div class="page-header">
+  <h2>{{ editando ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço' }}</h2>
+</div>
+
+<div class="alert alert-error" *ngIf="erro">{{ erro }}</div>
+<div class="loading" *ngIf="loading">Carregando dados...</div>
+
+<form [formGroup]="form" (ngSubmit)="salvar()" class="form-card" *ngIf="!loading">
+
+  <div class="form-group">
+    <label>Título *</label>
+    <input type="text" formControlName="titulo" placeholder="Título da ordem" />
+    <span class="field-error" *ngIf="f['titulo'].touched && f['titulo'].errors?.['required']">Título é obrigatório.</span>
+    <span class="field-error" *ngIf="f['titulo'].touched && f['titulo'].errors?.['minlength']">Mínimo 3 caracteres.</span>
+  </div>
+
+  <div class="form-group">
+    <label>Descrição</label>
+    <textarea formControlName="descricao" rows="3" placeholder="Descrição detalhada da ordem"></textarea>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Cliente ID *</label>
+      <input type="number" min="1" formControlName="clienteId" placeholder="ID do cliente" />
+      <span class="field-error" *ngIf="f['clienteId'].touched && f['clienteId'].errors?.['required']">Cliente é obrigatório.</span>
+      <span class="field-error" *ngIf="f['clienteId'].touched && f['clienteId'].errors?.['min']">ID deve ser maior que zero.</span>
+    </div>
+
+    <div class="form-group">
+      <label>Valor (R$) *</label>
+      <input type="number" step="0.01" min="0" formControlName="valor" placeholder="0,00" />
+      <span class="field-error" *ngIf="f['valor'].touched && f['valor'].errors?.['required']">Valor é obrigatório.</span>
+      <span class="field-error" *ngIf="f['valor'].touched && f['valor'].errors?.['min']">Valor deve ser maior que zero.</span>
+    </div>
+  </div>
+
+  <div class="form-group" *ngIf="editando">
+    <label>Status</label>
+    <select formControlName="status">
+      <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+    </select>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" (click)="cancelar()">Cancelar</button>
+    <button type="submit" class="btn btn-primary" [disabled]="salvando">
+      {{ salvando ? 'Salvando...' : 'Salvar' }}
+    </button>
+  </div>
+
+</form>
+

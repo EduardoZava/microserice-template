@@ -11,4 +11,7 @@ export const environment = {
     scopes: ['api://YOUR_API_CLIENT_ID/access_as_user'],
     uri: 'https://your-production-domain.com/api/',
   },
+  // Through Traefik gateway in production
+  catalogoApiUrl: '/catalogo/api/produtos',
+  ordemApiUrl: '/ordem/api/ordens',
 };

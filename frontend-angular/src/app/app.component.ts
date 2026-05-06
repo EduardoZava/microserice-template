@@ -11,6 +11,7 @@ import { filter, takeUntil } from 'rxjs/operators';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'Microservice Template';
   isAuthenticated = false;
+  userName = '';
   private readonly destroying$ = new Subject<void>();
 
   constructor(
@@ -25,7 +26,11 @@ export class AppComponent implements OnInit, OnDestroy {
         takeUntil(this.destroying$)
       )
       .subscribe(() => {
-        this.isAuthenticated = this.msalService.instance.getAllAccounts().length > 0;
+        const accounts = this.msalService.instance.getAllAccounts();
+        this.isAuthenticated = accounts.length > 0;
+        if (this.isAuthenticated) {
+          this.userName = accounts[0].name ?? accounts[0].username;
+        }
       });
   }
 

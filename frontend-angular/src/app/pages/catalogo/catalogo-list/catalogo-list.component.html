@@ -1,0 +1,45 @@
+<div class="page-header">
+  <h2>Catálogo de Produtos</h2>
+  <button class="btn btn-primary" (click)="novo()">+ Novo Produto</button>
+</div>
+
+<div class="alert alert-error" *ngIf="erro">{{ erro }}</div>
+
+<div class="loading" *ngIf="loading">Carregando...</div>
+
+<div class="empty-state" *ngIf="!loading && produtos.length === 0 && !erro">
+  Nenhum produto cadastrado.
+</div>
+
+<table class="table" *ngIf="!loading && produtos.length > 0">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nome</th>
+      <th>Categoria</th>
+      <th>Preço</th>
+      <th>Estoque</th>
+      <th>Ativo</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of produtos">
+      <td>{{ p.id }}</td>
+      <td>{{ p.nome }}</td>
+      <td>{{ p.categoria || '—' }}</td>
+      <td>{{ p.preco | currency:'BRL':'symbol':'1.2-2':'pt' }}</td>
+      <td>{{ p.estoque }}</td>
+      <td>
+        <span class="badge" [class.badge-success]="p.ativo" [class.badge-inactive]="!p.ativo">
+          {{ p.ativo ? 'Sim' : 'Não' }}
+        </span>
+      </td>
+      <td class="actions">
+        <button class="btn btn-sm btn-secondary" (click)="editar(p.id!)">Editar</button>
+        <button class="btn btn-sm btn-danger" (click)="deletar(p.id!)">Excluir</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+

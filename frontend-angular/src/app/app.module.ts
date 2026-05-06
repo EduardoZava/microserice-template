@@ -1,5 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import {
   MsalModule,
@@ -20,6 +22,11 @@ import {
 } from '@azure/msal-browser';
 import { environment } from '../environments/environment';
 import { AppComponent } from './app.component';
+import { AppRoutingModule } from './app-routing.module';
+import { CatalogoListComponent } from './pages/catalogo/catalogo-list/catalogo-list.component';
+import { CatalogoFormComponent } from './pages/catalogo/catalogo-form/catalogo-form.component';
+import { OrdemListComponent } from './pages/ordens/ordem-list/ordem-list.component';
+import { OrdemFormComponent } from './pages/ordens/ordem-form/ordem-form.component';
 
 export function MSALInstanceFactory() {
   return new PublicClientApplication({
@@ -59,10 +66,19 @@ export function MSALInterceptorConfigFactory() {
 }
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [
+    AppComponent,
+    CatalogoListComponent,
+    CatalogoFormComponent,
+    OrdemListComponent,
+    OrdemFormComponent,
+  ],
   imports: [
     BrowserModule,
+    CommonModule,
+    ReactiveFormsModule,
     HttpClientModule,
+    AppRoutingModule,
     MsalModule,
   ],
   providers: [

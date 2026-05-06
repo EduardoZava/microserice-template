@@ -1,0 +1,49 @@
+<div class="page-header">
+  <h2>Ordens de Serviço</h2>
+  <button class="btn btn-primary" (click)="nova()">+ Nova Ordem</button>
+</div>
+
+<div class="alert alert-error" *ngIf="erro">{{ erro }}</div>
+
+<div class="loading" *ngIf="loading">Carregando...</div>
+
+<div class="empty-state" *ngIf="!loading && ordens.length === 0 && !erro">
+  Nenhuma ordem de serviço encontrada.
+</div>
+
+<table class="table" *ngIf="!loading && ordens.length > 0">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Título</th>
+      <th>Cliente ID</th>
+      <th>Valor</th>
+      <th>Status</th>
+      <th>Criado em</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let o of ordens">
+      <td>{{ o.id }}</td>
+      <td>{{ o.titulo }}</td>
+      <td>{{ o.clienteId }}</td>
+      <td>{{ o.valor | currency:'BRL':'symbol':'1.2-2':'pt' }}</td>
+      <td>
+        <span class="badge"
+          [class.badge-success]="o.status === 'CONCLUIDA'"
+          [class.badge-warning]="o.status === 'EM_ANDAMENTO'"
+          [class.badge-inactive]="o.status === 'CANCELADA'"
+          [class.badge-info]="o.status === 'ABERTA'">
+          {{ labelStatus(o.status) }}
+        </span>
+      </td>
+      <td>{{ o.criadoEm | date:'dd/MM/yyyy HH:mm' }}</td>
+      <td class="actions">
+        <button class="btn btn-sm btn-secondary" (click)="editar(o.id!)">Editar</button>
+        <button class="btn btn-sm btn-danger" (click)="deletar(o.id!)">Excluir</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+

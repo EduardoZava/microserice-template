@@ -1,13 +1,23 @@
 <div class="app-container">
-  <header>
-    <h1>{{ title }}</h1>
-    <nav>
-      <button *ngIf="!isAuthenticated" (click)="login()">Login com Entra ID</button>
-      <button *ngIf="isAuthenticated" (click)="logout()">Logout</button>
+  <header class="app-header">
+    <a class="app-brand" routerLink="/">Microservice Template</a>
+    <nav class="app-nav" *ngIf="isAuthenticated">
+      <a routerLink="/catalogo" routerLinkActive="active">Catálogo</a>
+      <a routerLink="/ordens" routerLinkActive="active">Ordens de Serviço</a>
     </nav>
+    <div class="app-auth">
+      <button class="btn btn-outline" *ngIf="!isAuthenticated" (click)="login()">Login com Entra ID</button>
+      <span *ngIf="isAuthenticated" class="user-greeting">Olá, {{ userName }}</span>
+      <button class="btn btn-outline" *ngIf="isAuthenticated" (click)="logout()">Sair</button>
+    </div>
   </header>
-  <main>
-    <p *ngIf="!isAuthenticated">Por favor, faça login para continuar.</p>
-    <p *ngIf="isAuthenticated">Bem-vindo! Você está autenticado.</p>
+
+  <main class="app-main">
+    <div *ngIf="!isAuthenticated" class="welcome">
+      <h2>Bem-vindo ao Microservice Template</h2>
+      <p>Faça login com sua conta corporativa para acessar o sistema.</p>
+      <button class="btn btn-primary btn-lg" (click)="login()">Login com Entra ID</button>
+    </div>
+    <router-outlet *ngIf="isAuthenticated"></router-outlet>
   </main>
 </div>
