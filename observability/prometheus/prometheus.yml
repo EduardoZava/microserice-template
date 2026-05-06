@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "bff-service"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["bff-service:8080"]
+
+  - job_name: "ordem-servico"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["ordem-servico:8081"]
+
+  - job_name: "pagamento-servico"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["pagamento-servico:8082"]
+
+  - job_name: "catalogo-servico"
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["catalogo-servico:8083"]
+

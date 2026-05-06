@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: admin-rbac
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/admin_rbac}
+      database: ${MONGODB_DATABASE:admin_rbac}
+  security:
+    user:
+      name: ${ADMIN_USER:admin}
+      password: ${ADMIN_PASSWORD:admin123}
+
+server:
+  port: 8084
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    com.template.admin: DEBUG
