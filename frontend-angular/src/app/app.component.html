@@ -1,0 +1,13 @@
+<div class="app-container">
+  <header>
+    <h1>{{ title }}</h1>
+    <nav>
+      <button *ngIf="!isAuthenticated" (click)="login()">Login com Entra ID</button>
+      <button *ngIf="isAuthenticated" (click)="logout()">Logout</button>
+    </nav>
+  </header>
+  <main>
+    <p *ngIf="!isAuthenticated">Por favor, faça login para continuar.</p>
+    <p *ngIf="isAuthenticated">Bem-vindo! Você está autenticado.</p>
+  </main>
+</div>

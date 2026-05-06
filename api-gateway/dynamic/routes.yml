@@ -1,0 +1,47 @@
+http:
+  middlewares:
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+          - PATCH
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowOriginList:
+          - "http://localhost:4200"
+          - "https://your-production-domain.com"
+        accessControlMaxAge: 100
+        addVaryHeader: true
+
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    secure-headers:
+      headers:
+        frameDeny: true
+        contentTypeNosniff: true
+        browserXssFilter: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+
+  routers:
+    bff-router:
+      rule: "PathPrefix(`/api`)"
+      entryPoints:
+        - web
+      service: bff-service
+      middlewares:
+        - cors-headers
+        - rate-limit
+
+  services:
+    bff-service:
+      loadBalancer:
+        servers:
+          - url: "http://bff-service:8080"

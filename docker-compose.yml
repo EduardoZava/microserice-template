@@ -1,0 +1,215 @@
+version: "3.9"
+
+networks:
+  microservice-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  mongodb-data:
+  redis-data:
+
+services:
+  # ── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_MULTIPLE_DATABASES: ordem_db,pagamento_db,catalogo_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-admin123}
+      MONGO_INITDB_DATABASE: admin_rbac
+    volumes:
+      - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./api-gateway/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./api-gateway/dynamic:/etc/traefik/dynamic:ro
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+
+  # ── Application Services ─────────────────────────────────────────────────────
+
+  frontend-angular:
+    build:
+      context: ./frontend-angular
+      dockerfile: Dockerfile
+    container_name: frontend-angular
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    depends_on:
+      - traefik
+
+  bff-service:
+    build:
+      context: ./bff-service
+      dockerfile: Dockerfile
+    container_name: bff-service
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bff.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.bff.entrypoints=web"
+      - "traefik.http.services.bff.loadbalancer.server.port=8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      traefik:
+        condition: service_started
+
+  ordem-servico:
+    build:
+      context: ./ordem-servico
+      dockerfile: Dockerfile
+    container_name: ordem-servico
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ordem_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ordem.rule=PathPrefix(`/ordem`)"
+      - "traefik.http.routers.ordem.entrypoints=web"
+      - "traefik.http.services.ordem.loadbalancer.server.port=8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pagamento-servico:
+    build:
+      context: ./pagamento-servico
+      dockerfile: Dockerfile
+    container_name: pagamento-servico
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: pagamento_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pagamento.rule=PathPrefix(`/pagamento`)"
+      - "traefik.http.routers.pagamento.entrypoints=web"
+      - "traefik.http.services.pagamento.loadbalancer.server.port=8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  catalogo-servico:
+    build:
+      context: ./catalogo-servico
+      dockerfile: Dockerfile
+    container_name: catalogo-servico
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: catalogo_db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.catalogo.rule=PathPrefix(`/catalogo`)"
+      - "traefik.http.routers.catalogo.entrypoints=web"
+      - "traefik.http.services.catalogo.loadbalancer.server.port=8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  admin-rbac:
+    build:
+      context: ./admin-rbac
+      dockerfile: Dockerfile
+    container_name: admin-rbac
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-admin123}@mongodb:27017/admin_rbac?authSource=admin
+      MONGODB_DATABASE: admin_rbac
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    networks:
+      - microservice-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin.rule=PathPrefix(`/admin`)"
+      - "traefik.http.routers.admin.entrypoints=web"
+      - "traefik.http.services.admin.loadbalancer.server.port=8084"
+    depends_on:
+      mongodb:
+        condition: service_healthy
