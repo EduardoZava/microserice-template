@@ -3,6 +3,10 @@ package com.template.pagamento.service;
 import com.template.pagamento.dto.PagamentoDTO;
 import com.template.pagamento.entity.Pagamento;
 import com.template.pagamento.repository.PagamentoRepository;
+import com.template.saga.event.OrdemCriadaEvent;
+import com.template.saga.event.PagamentoProcessadoEvent;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +18,17 @@ import java.util.NoSuchElementException;
 public class PagamentoService {
 
     private final PagamentoRepository repository;
+    private final KafkaTemplate<String, PagamentoProcessadoEvent> kafkaTemplate;
+    private final String pagamentoStatusTopic;
 
-    public PagamentoService(PagamentoRepository repository) {
+    public PagamentoService(
+        PagamentoRepository repository,
+        KafkaTemplate<String, PagamentoProcessadoEvent> kafkaTemplate,
+        @Value("${saga.topics.pagamento-status}") String pagamentoStatusTopic
+    ) {
         this.repository = repository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.pagamentoStatusTopic = pagamentoStatusTopic;
     }
 
     @Transactional(readOnly = true)
@@ -54,5 +66,21 @@ public class PagamentoService {
     public List<PagamentoDTO> listarPorOrdem(Long ordemServicoId) {
         return repository.findByOrdemServicoId(ordemServicoId).stream()
             .map(PagamentoDTO::fromEntity).toList();
+    }
+
+    public void processarOrdemCriada(OrdemCriadaEvent event) {
+        Pagamento entity = new Pagamento();
+        entity.setOrdemServicoId(event.ordemId());
+        entity.setValor(event.valor());
+        entity.setFormaPagamento(Pagamento.FormaPagamento.PIX);
+        entity.setStatus(Pagamento.StatusPagamento.APROVADO);
+        entity.setPagoEm(java.time.LocalDateTime.now());
+
+        Pagamento saved = repository.save(entity);
+        kafkaTemplate.send(
+            pagamentoStatusTopic,
+            String.valueOf(event.ordemId()),
+            new PagamentoProcessadoEvent(event.ordemId(), saved.getId(), saved.getStatus().name())
+        );
     }
 }

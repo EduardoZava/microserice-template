@@ -30,6 +30,28 @@ http:
         stsSeconds: 31536000
         stsIncludeSubdomains: true
 
+    strip-ordem-prefix:
+      stripPrefix:
+        prefixes:
+          - "/ordem"
+
+    strip-pagamento-prefix:
+      stripPrefix:
+        prefixes:
+          - "/pagamento"
+
+    strip-catalogo-prefix:
+      stripPrefix:
+        prefixes:
+          - "/catalogo"
+
+    jwt-forward-auth:
+      forwardAuth:
+        address: "http://bff-service:8080/api/internal/auth/validate"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - "X-Forwarded-User"
+
   routers:
     bff-router:
       rule: "PathPrefix(`/api`)"
@@ -39,9 +61,65 @@ http:
       middlewares:
         - cors-headers
         - rate-limit
+        - secure-headers
+
+    ordem-router:
+      rule: "PathPrefix(`/ordem/api`)"
+      entryPoints:
+        - web
+      service: ordem-service
+      middlewares:
+        - cors-headers
+        - rate-limit
+        - secure-headers
+        - jwt-forward-auth
+        - internal-api-key@docker
+        - strip-ordem-prefix
+
+    pagamento-router:
+      rule: "PathPrefix(`/pagamento/api`)"
+      entryPoints:
+        - web
+      service: pagamento-service
+      middlewares:
+        - cors-headers
+        - rate-limit
+        - secure-headers
+        - jwt-forward-auth
+        - internal-api-key@docker
+        - strip-pagamento-prefix
+
+    catalogo-router:
+      rule: "PathPrefix(`/catalogo/api`)"
+      entryPoints:
+        - web
+      service: catalogo-service
+      middlewares:
+        - cors-headers
+        - rate-limit
+        - secure-headers
+        - jwt-forward-auth
+        - internal-api-key@docker
+        - strip-catalogo-prefix
 
   services:
     bff-service:
       loadBalancer:
         servers:
           - url: "http://bff-service:8080"
+
+    ordem-service:
+      loadBalancer:
+        servers:
+          - url: "http://ordem-servico:8081"
+
+    pagamento-service:
+      loadBalancer:
+        servers:
+          - url: "http://pagamento-servico:8082"
+
+    catalogo-service:
+      loadBalancer:
+        servers:
+          - url: "http://catalogo-servico:8083"
+

@@ -3,6 +3,10 @@ package com.template.ordem.service;
 import com.template.ordem.dto.OrdemServicoDTO;
 import com.template.ordem.entity.OrdemServico;
 import com.template.ordem.repository.OrdemServicoRepository;
+import com.template.saga.event.OrdemCriadaEvent;
+import com.template.saga.event.PagamentoProcessadoEvent;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +18,17 @@ import java.util.NoSuchElementException;
 public class OrdemServicoService {
 
     private final OrdemServicoRepository repository;
+    private final KafkaTemplate<String, OrdemCriadaEvent> kafkaTemplate;
+    private final String ordemCriadaTopic;
 
-    public OrdemServicoService(OrdemServicoRepository repository) {
+    public OrdemServicoService(
+        OrdemServicoRepository repository,
+        KafkaTemplate<String, OrdemCriadaEvent> kafkaTemplate,
+        @Value("${saga.topics.ordem-criada}") String ordemCriadaTopic
+    ) {
         this.repository = repository;
+        this.kafkaTemplate = kafkaTemplate;
+        this.ordemCriadaTopic = ordemCriadaTopic;
     }
 
     @Transactional(readOnly = true)
@@ -38,7 +50,13 @@ public class OrdemServicoService {
         entity.setStatus(OrdemServico.StatusOrdem.ABERTA);
         entity.setValor(dto.valor());
         entity.setClienteId(dto.clienteId());
-        return OrdemServicoDTO.fromEntity(repository.save(entity));
+        OrdemServico saved = repository.save(entity);
+        kafkaTemplate.send(
+            ordemCriadaTopic,
+            String.valueOf(saved.getId()),
+            new OrdemCriadaEvent(saved.getId(), saved.getClienteId(), saved.getValor())
+        );
+        return OrdemServicoDTO.fromEntity(saved);
     }
 
     public OrdemServicoDTO atualizar(Long id, OrdemServicoDTO dto) {
@@ -59,5 +77,16 @@ public class OrdemServicoService {
     public List<OrdemServicoDTO> listarPorCliente(Long clienteId) {
         return repository.findByClienteId(clienteId).stream()
             .map(OrdemServicoDTO::fromEntity).toList();
+    }
+
+    public void processarResultadoPagamento(PagamentoProcessadoEvent event) {
+        repository.findById(event.ordemId()).ifPresent(ordem -> {
+            if ("APROVADO".equalsIgnoreCase(event.status())) {
+                ordem.setStatus(OrdemServico.StatusOrdem.CONCLUIDA);
+            } else {
+                ordem.setStatus(OrdemServico.StatusOrdem.CANCELADA);
+            }
+            repository.save(ordem);
+        });
     }
 }

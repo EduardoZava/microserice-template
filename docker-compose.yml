@@ -8,6 +8,7 @@ volumes:
   postgres-data:
   mongodb-data:
   redis-data:
+  grafana-data:
 
 services:
   # ── Infrastructure ──────────────────────────────────────────────────────────
@@ -67,6 +68,65 @@ services:
       timeout: 5s
       retries: 5
 
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: kafka
+    environment:
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - "9092:9092"
+    networks:
+      - microservice-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+
+  zipkin:
+    image: openzipkin/zipkin:3.4
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - microservice-network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - microservice-network
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - microservice-network
+
   traefik:
     image: traefik:v3.0
     container_name: traefik
@@ -81,6 +141,7 @@ services:
       - microservice-network
     labels:
       - "traefik.enable=true"
+      - "traefik.http.middlewares.internal-api-key.headers.customrequestheaders.X-Internal-Api-Key=${INTERNAL_API_KEY:-change-me-in-env}"
 
   # ── Application Services ─────────────────────────────────────────────────────
 
@@ -109,13 +170,13 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
       OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+      OAUTH2_CLIENT_ID: ${OAUTH2_CLIENT_ID:-change-me}
+      OAUTH2_CLIENT_SECRET: ${OAUTH2_CLIENT_SECRET:-change-me}
+      OAUTH2_CLIENT_SCOPE: ${OAUTH2_CLIENT_SCOPE:-api://YOUR_API_CLIENT_ID/access_as_user}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-change-me-in-env}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
     networks:
       - microservice-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bff.rule=PathPrefix(`/api`)"
-      - "traefik.http.routers.bff.entrypoints=web"
-      - "traefik.http.services.bff.loadbalancer.server.port=8080"
     depends_on:
       redis:
         condition: service_healthy
@@ -133,15 +194,16 @@ services:
       DB_NAME: ordem_db
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-change-me-in-env}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
     networks:
       - microservice-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ordem.rule=PathPrefix(`/ordem`)"
-      - "traefik.http.routers.ordem.entrypoints=web"
-      - "traefik.http.services.ordem.loadbalancer.server.port=8081"
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   pagamento-servico:
@@ -155,15 +217,16 @@ services:
       DB_NAME: pagamento_db
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-change-me-in-env}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
     networks:
       - microservice-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pagamento.rule=PathPrefix(`/pagamento`)"
-      - "traefik.http.routers.pagamento.entrypoints=web"
-      - "traefik.http.services.pagamento.loadbalancer.server.port=8082"
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   catalogo-servico:
@@ -180,13 +243,11 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      OAUTH2_ISSUER_URI: ${OAUTH2_ISSUER_URI:-https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-change-me-in-env}
+      ZIPKIN_ENDPOINT: ${ZIPKIN_ENDPOINT:-http://zipkin:9411/api/v2/spans}
     networks:
       - microservice-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.catalogo.rule=PathPrefix(`/catalogo`)"
-      - "traefik.http.routers.catalogo.entrypoints=web"
-      - "traefik.http.services.catalogo.loadbalancer.server.port=8083"
     depends_on:
       postgres:
         condition: service_healthy

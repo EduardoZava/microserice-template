@@ -109,6 +109,10 @@ docker compose down
 | PostgreSQL         | 5432  | PostgreSQL 16      | Relational data store           |
 | MongoDB            | 27017 | MongoDB 7          | Document store for RBAC         |
 | Redis              | 6379  | Redis 7            | Cache layer                     |
+| Kafka              | 9092  | Kafka 3.7          | Event streaming / SAGA          |
+| Zipkin             | 9411  | OpenZipkin         | Distributed tracing             |
+| Prometheus         | 9090  | Prometheus         | Metrics scraping                |
+| Grafana            | 3000  | Grafana            | Dashboards                      |
 
 *4200 is for `ng serve` local dev. In Docker, served via Nginx on port 80.
 
@@ -167,7 +171,38 @@ ADMIN_PASSWORD=your_secure_password
 
 # Entra ID / OAuth2
 OAUTH2_ISSUER_URI=https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0
+OAUTH2_CLIENT_ID=your_client_id
+OAUTH2_CLIENT_SECRET=your_client_secret
+OAUTH2_CLIENT_SCOPE=api://YOUR_API_CLIENT_ID/access_as_user
+
+# Internal API security
+INTERNAL_API_KEY=change-me-in-env
+
+# Observability
+ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+
+# Grafana
+GRAFANA_USER=admin
+GRAFANA_PASSWORD=admin
 ```
+
+## Security hardening added
+
+- `bff-service` now uses `OAuth2 Client` with proactive token refresh (60-second clock skew), plus Redis-backed session.
+- API Gateway validates JWT via `forwardAuth` against `bff-service` and injects `X-Internal-Api-Key` for internal calls.
+- `catalogo-servico`, `ordem-servico`, and `pagamento-servico` validate JWT and require `X-Internal-Api-Key` on `/api/**`.
+
+## Distributed observability
+
+- Zipkin: http://localhost:9411
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
+
+## Kafka SAGA (event-driven)
+
+- Topic `ordem-criada-topic`: published by `ordem-servico` when a new order is created.
+- Topic `pagamento-status-topic`: published by `pagamento-servico` with payment processing result.
+- `ordem-servico` consumes payment status and updates order status (`CONCLUIDA` or `CANCELADA`).
 
 ---
 
