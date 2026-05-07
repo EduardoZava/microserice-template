@@ -18,12 +18,12 @@ import java.util.NoSuchElementException;
 public class OrdemServicoService {
 
     private final OrdemServicoRepository repository;
-    private final KafkaTemplate<String, OrdemCriadaEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String ordemCriadaTopic;
 
     public OrdemServicoService(
         OrdemServicoRepository repository,
-        KafkaTemplate<String, OrdemCriadaEvent> kafkaTemplate,
+        KafkaTemplate<String, Object> kafkaTemplate,
         @Value("${saga.topics.ordem-criada}") String ordemCriadaTopic
     ) {
         this.repository = repository;

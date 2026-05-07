@@ -18,12 +18,12 @@ import java.util.NoSuchElementException;
 public class PagamentoService {
 
     private final PagamentoRepository repository;
-    private final KafkaTemplate<String, PagamentoProcessadoEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String pagamentoStatusTopic;
 
     public PagamentoService(
         PagamentoRepository repository,
-        KafkaTemplate<String, PagamentoProcessadoEvent> kafkaTemplate,
+        KafkaTemplate<String, Object> kafkaTemplate,
         @Value("${saga.topics.pagamento-status}") String pagamentoStatusTopic
     ) {
         this.repository = repository;

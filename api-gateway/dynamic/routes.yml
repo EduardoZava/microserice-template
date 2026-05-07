@@ -52,6 +52,11 @@ http:
         authResponseHeaders:
           - "X-Forwarded-User"
 
+    internal-api-key:
+      headers:
+        customRequestHeaders:
+          X-Internal-Api-Key: "change-me-in-env"
+
   routers:
     bff-router:
       rule: "PathPrefix(`/api`)"
@@ -73,7 +78,7 @@ http:
         - rate-limit
         - secure-headers
         - jwt-forward-auth
-        - internal-api-key@docker
+        - internal-api-key
         - strip-ordem-prefix
 
     pagamento-router:
@@ -86,7 +91,7 @@ http:
         - rate-limit
         - secure-headers
         - jwt-forward-auth
-        - internal-api-key@docker
+        - internal-api-key
         - strip-pagamento-prefix
 
     catalogo-router:
@@ -99,7 +104,7 @@ http:
         - rate-limit
         - secure-headers
         - jwt-forward-auth
-        - internal-api-key@docker
+        - internal-api-key
         - strip-catalogo-prefix
 
   services:

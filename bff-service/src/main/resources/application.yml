@@ -8,7 +8,7 @@ spring:
       client:
         provider:
           entra:
-            issuer-uri: ${OAUTH2_ISSUER_URI:https://login.microsoftonline.com/YOUR_TENANT_ID/v2.0}
+            token-uri: ${OAUTH2_TOKEN_URI:https://login.microsoftonline.com/common/oauth2/v2.0/token}
         registration:
           internal-api-client:
             provider: entra

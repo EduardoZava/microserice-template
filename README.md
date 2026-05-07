@@ -265,6 +265,12 @@ Or set the `OAUTH2_ISSUER_URI` environment variable.
 
 ## Development
 
+## Operational Runbook
+
+Para troubleshooting rápido do fluxo Angular + Entra ID + Traefik + Spring Boot, consulte:
+
+- [`docs/OPERATIONS-RUNBOOK.md`](docs/OPERATIONS-RUNBOOK.md)
+
 ### Running a single service locally
 
 ```bash

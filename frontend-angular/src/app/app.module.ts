@@ -58,7 +58,12 @@ export function MSALGuardConfigFactory() {
 
 export function MSALInterceptorConfigFactory() {
   const protectedResourceMap = new Map<string, Array<string>>();
+  const toAbsoluteUrl = (url: string) =>
+    url.startsWith('http') ? url : `${window.location.origin}${url}`;
+
   protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
+  protectedResourceMap.set(toAbsoluteUrl(environment.catalogoApiUrl), environment.apiConfig.scopes);
+  protectedResourceMap.set(toAbsoluteUrl(environment.ordemApiUrl), environment.apiConfig.scopes);
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap,
