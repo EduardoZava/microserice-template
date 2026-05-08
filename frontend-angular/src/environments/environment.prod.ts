@@ -12,6 +12,7 @@ export const environment = {
     uri: 'https://your-production-domain.com/api/',
   },
   // Through Traefik gateway in production
-  catalogoApiUrl: '/catalogo/api/produtos',
+  catalogoApiUrl: '/api/catalogo/produtos',
+  servicoApiUrl: '/api/catalogo/servicos',
   ordemApiUrl: '/ordem/api/ordens',
 };

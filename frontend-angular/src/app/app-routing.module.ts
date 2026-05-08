@@ -5,6 +5,8 @@ import { CatalogoListComponent } from './pages/catalogo/catalogo-list/catalogo-l
 import { CatalogoFormComponent } from './pages/catalogo/catalogo-form/catalogo-form.component';
 import { OrdemListComponent } from './pages/ordens/ordem-list/ordem-list.component';
 import { OrdemFormComponent } from './pages/ordens/ordem-form/ordem-form.component';
+import { ServicoListComponent } from './pages/servicos/servico-list/servico-list.component';
+import { ServicoFormComponent } from './pages/servicos/servico-form/servico-form.component';
 
 const routes: Routes = [
   { path: '', redirectTo: 'catalogo', pathMatch: 'full' },
@@ -26,6 +28,21 @@ const routes: Routes = [
   {
     path: 'ordens',
     component: OrdemListComponent,
+    canActivate: [MsalGuard],
+  },
+  {
+    path: 'servicos',
+    component: ServicoListComponent,
+    canActivate: [MsalGuard],
+  },
+  {
+    path: 'servicos/novo',
+    component: ServicoFormComponent,
+    canActivate: [MsalGuard],
+  },
+  {
+    path: 'servicos/editar/:id',
+    component: ServicoFormComponent,
     canActivate: [MsalGuard],
   },
   {

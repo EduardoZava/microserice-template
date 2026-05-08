@@ -42,6 +42,10 @@ internal:
   api:
     key: ${INTERNAL_API_KEY:change-me-in-env}
 
+bff:
+  catalogo:
+    base-url: ${CATALOGO_SERVICE_URL:http://catalogo-servico:8083/api}
+
 management:
   endpoints:
     web:

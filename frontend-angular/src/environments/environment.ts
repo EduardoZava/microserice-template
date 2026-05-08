@@ -12,6 +12,7 @@ export const environment = {
     uri: 'http://localhost:8080/api/',
   },
   // Through Traefik gateway in local dev
-  catalogoApiUrl: '/catalogo/api/produtos',
+  catalogoApiUrl: '/api/catalogo/produtos',
+  servicoApiUrl: '/api/catalogo/servicos',
   ordemApiUrl: '/ordem/api/ordens',
 };

@@ -1,0 +1,45 @@
+<div class="page-header">
+  <h2>Serviços do Catálogo</h2>
+  <button class="btn btn-primary" (click)="novo()">+ Novo Serviço</button>
+</div>
+
+<div class="alert alert-error" *ngIf="erro">{{ erro }}</div>
+
+<div class="loading" *ngIf="loading">Carregando...</div>
+
+<div class="empty-state" *ngIf="!loading && servicos.length === 0 && !erro">
+  Nenhum serviço cadastrado.
+</div>
+
+<table class="table" *ngIf="!loading && servicos.length > 0">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Nome</th>
+      <th>Categoria</th>
+      <th>Preço Base</th>
+      <th>Duração</th>
+      <th>Ativo</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let s of servicos">
+      <td>{{ s.id }}</td>
+      <td>{{ s.nome }}</td>
+      <td>{{ s.categoria || '—' }}</td>
+      <td>{{ s.precoBase | currency:'BRL':'symbol':'1.2-2':'pt' }}</td>
+      <td>{{ s.duracaoEstimadaMinutos }} min</td>
+      <td>
+        <span class="badge" [class.badge-success]="s.ativo" [class.badge-inactive]="!s.ativo">
+          {{ s.ativo ? 'Sim' : 'Não' }}
+        </span>
+      </td>
+      <td class="actions">
+        <button class="btn btn-sm btn-secondary" (click)="editar(s.id!)">Editar</button>
+        <button class="btn btn-sm btn-danger" (click)="deletar(s.id!)">Excluir</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+

@@ -27,6 +27,8 @@ import { CatalogoListComponent } from './pages/catalogo/catalogo-list/catalogo-l
 import { CatalogoFormComponent } from './pages/catalogo/catalogo-form/catalogo-form.component';
 import { OrdemListComponent } from './pages/ordens/ordem-list/ordem-list.component';
 import { OrdemFormComponent } from './pages/ordens/ordem-form/ordem-form.component';
+import { ServicoListComponent } from './pages/servicos/servico-list/servico-list.component';
+import { ServicoFormComponent } from './pages/servicos/servico-form/servico-form.component';
 
 export function MSALInstanceFactory() {
   return new PublicClientApplication({
@@ -61,8 +63,10 @@ export function MSALInterceptorConfigFactory() {
   const toAbsoluteUrl = (url: string) =>
     url.startsWith('http') ? url : `${window.location.origin}${url}`;
 
+  protectedResourceMap.set(toAbsoluteUrl('/api/'), environment.apiConfig.scopes);
   protectedResourceMap.set(environment.apiConfig.uri, environment.apiConfig.scopes);
   protectedResourceMap.set(toAbsoluteUrl(environment.catalogoApiUrl), environment.apiConfig.scopes);
+  protectedResourceMap.set(toAbsoluteUrl(environment.servicoApiUrl), environment.apiConfig.scopes);
   protectedResourceMap.set(toAbsoluteUrl(environment.ordemApiUrl), environment.apiConfig.scopes);
   return {
     interactionType: InteractionType.Redirect,
@@ -75,6 +79,8 @@ export function MSALInterceptorConfigFactory() {
     AppComponent,
     CatalogoListComponent,
     CatalogoFormComponent,
+    ServicoListComponent,
+    ServicoFormComponent,
     OrdemListComponent,
     OrdemFormComponent,
   ],

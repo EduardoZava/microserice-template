@@ -1,4 +1,9 @@
 {
+y  "/api": {
+    "target": "http://localhost:80",
+    "secure": false,
+    "logLevel": "info"
+  },
   "/catalogo/api": {
     "target": "http://localhost:80",
     "secure": false,
